@@ -131,9 +131,26 @@ categories: [security, bug, performance, maintainability, style]
 
 ## Effectiveness Experiment
 
-We ran a controlled A/B experiment to measure MyGO's impact on code quality. A single LLM (DeepSeek V4 Pro) implemented a 10-feature TODO API twice — once alone (Group A), once with MyGO reviewing every feature before commit (Group B). Each feature was a fresh LLM call with no shared context, ensuring zero contamination.
+We ran two controlled A/B experiments to measure MyGO's impact. Each feature was a fresh LLM call with no shared context, ensuring zero contamination.
 
-**Test project**: FastAPI + SQLite TODO app with auth, CRUD, tags, search, batch ops, stats, export, and share links — 10 features in total, with the spec deliberately vague on security details.
+### Experiment 2 — Correctness (JSON Parser)
+
+A single LLM (DeepSeek V4 Pro) built a JSON parser from scratch in 7 incremental features. Group A committed directly, Group B ran MyGO review + fix before each commit. The final parsers were tested against **58 test cases** (39 valid + 19 invalid JSON inputs).
+
+| Metric | Group A (LLM only) | Group B (LLM + MyGO) |
+|--------|-------------------|----------------------|
+| **Correctness** | **0.0%** (0/58) | **100.0%** (58/58) |
+| Parser status | Broken — could not import | Fully functional |
+| MyGO findings | — | 11 issues across 4 features |
+| Syntax errors caught | — | 2 auto-retried |
+
+**What happened**: Group A's F2 API call timed out, leaving basic value parsing unimplemented. All subsequent features built on broken code, producing a parser that couldn't even import. Group B's MyGO caught bugs at F1 (leading-zero handling, unicode escape overflow), F4 (missing validation), F6 (weak error messages), and F7 (CLI edge cases). Combined with syntax-check retries, Group B produced a parser equivalent in correctness to Python's built-in `json` module.
+
+**Key takeaway**: Without MyGO, a single API hiccup cascaded into total codebase corruption. With MyGO, the same LLM produced a perfect parser — not just "fewer bugs," but zero functional defects.
+
+### Experiment 1 — Code Quality (TODO API)
+
+A single LLM implemented a 10-feature TODO API (FastAPI + SQLite + JWT auth) twice — once alone (Group A), once with MyGO reviewing every feature before commit (Group B). Automated checker scanned both final codebases for 9 security and quality checks.
 
 ### Results
 

@@ -1,6 +1,6 @@
 # 智能代码审查 Agent — Architecture Design Document
 
-> **Version**: v3.3 | **Created**: 2026-05-25 | **Status**: Complete — all 11 nodes passed
+> **Version**: v3.4 | **Created**: 2026-05-25 | **Status**: Complete — all 11 nodes passed + correctness experiment validated
 
 ## 1. Project Overview
 
@@ -853,3 +853,4 @@ class ProjectContextEngine:
 | 2026-05-25 | v3.1 | Tech Stack, Node 0.6 | Redesigned LLM module with multi-backend abstraction; AnthropicBackend + OpenAICompatBackend + GeminiBackend; 6+ providers supported (Anthropic, OpenAI, DeepSeek, Qwen, Kimi, GLM, Gemini); each backend handles system prompt placement differently | User requested OpenAI-compatible providers and Google Gemini support |
 | 2026-05-25 | v3.2 | Node 0.10, cli.py | Completed Node 0.10: 17 E2E tests + README + fixture diff files. Fixed production bug: `LSPEngine(timeout=...)` → `LSPEngine()` + `analyze(..., lsp_timeout)`. All 251 tests pass. | Node 0.10 completion + adversarial review fixes |
 | 2026-05-26 | v3.3 | Node 0.11, README | Added Node 0.11: Git pre-commit hook for agent integration (`install-hook`/`uninstall-hook` CLI commands, self-contained hook script). Hook blocks commits on critical+major findings with structured stderr output that AI agents can parse. | User requested agent integration (OpenCode + MyGO workflow) |
+| 2026-05-26 | v3.4 | Experiment 2 | Added correctness-driven A/B experiment (JSON parser from scratch). Group A (LLM only) scored 0% — code broken, could not import. Group B (LLM + MyGO) scored 100% — 58/58 test cases passed. MyGO found 11 bugs across 4 features; syntax-check retries caught 2 more. Also added `__main__.py` for `python -m mygo` support. | User requested stronger experiment proving correctness, not just code quality |
