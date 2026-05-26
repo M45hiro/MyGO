@@ -1,6 +1,6 @@
 # 智能代码审查 Agent — Architecture Design Document
 
-> **Version**: v3.2 | **Created**: 2026-05-25 | **Status**: Complete — all 10 nodes passed
+> **Version**: v3.3 | **Created**: 2026-05-25 | **Status**: Complete — all 11 nodes passed
 
 ## 1. Project Overview
 
@@ -337,12 +337,14 @@ class ProjectContextEngine:
       │
       ├─► 0.8 Prompt 构建 (prompt builder)
       │
-      └─► 0.9 CLI + 报告输出 (cli + formatter)
-           │
-           └─► 0.10 端到端集成 (e2e integration)
+      ├─► 0.9 CLI + 报告输出 (cli + formatter)
+      │    │
+      │    └─► 0.10 端到端集成 (e2e integration)
+      │
+      └─► 0.11 Git Pre-commit Hook (agent integration)
 ```
 
-**并行开发说明**：0.3, 0.4+0.5, 0.6, 0.7 均只依赖 0.2，可以并行开发。0.8 依赖 0.3/0.5/0.7，是第一个汇聚点。0.9 是最终汇聚点。
+**并行开发说明**：0.3, 0.4+0.5, 0.6, 0.7 均只依赖 0.2，可以并行开发。0.8 依赖 0.3/0.5/0.7，是第一个汇聚点。0.9 是最终汇聚点。0.11 依赖 0.9 的所有功能（CLI + JSON output + review pipeline）。
 
 ### 4.2 Detailed Node Specifications
 
@@ -742,7 +744,35 @@ class ProjectContextEngine:
 - **Date**: 2026-05-25
 - **Result**: BLOCKERS: 4 (fixed), CRITICAL: 4 (fixed), WARNINGS: 1, SUGGESTIONS: 0
 - **Verdict**: PASS WITH FIXES
-- **Key findings**:
+- **Key findings**: Fixed LSPEngine timeout parameter, added fixture diff for 3 languages, E2E tests for all output modes
+
+#### Node 0.11 — Git Pre-commit Hook (Agent Integration)
+
+- **Node ID**: 0.11
+- **Name**: Git Pre-commit Hook
+- **Goal**: 让 AI coding agent（OpenCode, Claude Code 等）在 `git commit` 时自动触发 MyGO 审查，agent 无需知道 MyGO 的存在
+- **Scope**:
+  - `mygo/hook.py` — hook 安装逻辑 + 自包含 hook 脚本模板
+  - `mygo/cli.py` — `install-hook` + `uninstall-hook` CLI 命令
+  - `README.md` — Agent Integration 使用文档
+  - `design.md` — Node 0.11 设计规范
+- **Acceptance Criteria**:
+  - `mygo install-hook` 安装 hook 到 `.git/hooks/pre-commit`
+  - hook 检测到 critical + major finding 时拦截提交（exit 1）
+  - hook 被拦截时 stderr 输出包含 file:line + description + Fix suggestion
+  - `MYGO_HOOK_BLOCK_ON` 环境变量控制拦截级别（`critical` / `critical+major`）
+  - `MYGO_SKIP_HOOK=1` 跳过审查
+  - `git commit --no-verify` 绕过 hook
+  - `mygo uninstall-hook` 移除 hook 并恢复备份
+  - MyGO 未安装时 hook 放行提交并警告
+  - 251 个已有测试全部通过
+- **Dependencies**: 0.9 (CLI + JSON output + review pipeline)
+- **Estimated Effort**: Medium
+- **Key design decisions**:
+  - Hook 是一个自包含的 Python 脚本（不 import mygo），通过 subprocess 调用 `mygo review --output json`，确保 mygo 未安装时也能优雅降级
+  - 使用 `Popen + communicate()` 而非 `subprocess.run`，避免 Windows `_readerthread` 问题
+  - 拦截阈值默认为 critical+major，因为 major 问题（性能、安全风险）累积后会产生技术债
+  - Agent 集成透明化：hook 退出码 + stderr 结构化输出是 git 的标准机制，所有 CLI agent 都能理解
   - B1 (fixed): Dead `_mock_pipeline` helper removed — tests use inline patches instead
   - B2 (fixed): `tests/fixtures/` populated with sample diff files (Python, TypeScript, Go)
   - B3 (fixed): `test_lsp_failure_does_not_crash` now explicitly mocks `LSPEngine.analyze` to raise
@@ -766,6 +796,7 @@ class ProjectContextEngine:
 | 0.8 | Prompt 构建 | passed | 0.2, 0.3, 0.5, 0.7 |
 | 0.9 | CLI + 报告输出 | passed | 0.3, 0.5, 0.6, 0.7, 0.8 |
 | 0.10 | 端到端集成 | passed | 0.9 |
+| 0.11 | Git Pre-commit Hook | passed | 0.9 |
 
 ---
 
@@ -821,3 +852,4 @@ class ProjectContextEngine:
 | 2026-05-25 | v3.0 | Architecture, Models, Nodes | Added ProjectContext auto-inference engine (Node 0.7); Prompt now 3-segment (role + context + diff+LSP); review boundary constraints in system prompt; new `--no-context` flag; 10 nodes total | User identified project intent gap; replaced manual project.yaml with automatic inference |
 | 2026-05-25 | v3.1 | Tech Stack, Node 0.6 | Redesigned LLM module with multi-backend abstraction; AnthropicBackend + OpenAICompatBackend + GeminiBackend; 6+ providers supported (Anthropic, OpenAI, DeepSeek, Qwen, Kimi, GLM, Gemini); each backend handles system prompt placement differently | User requested OpenAI-compatible providers and Google Gemini support |
 | 2026-05-25 | v3.2 | Node 0.10, cli.py | Completed Node 0.10: 17 E2E tests + README + fixture diff files. Fixed production bug: `LSPEngine(timeout=...)` → `LSPEngine()` + `analyze(..., lsp_timeout)`. All 251 tests pass. | Node 0.10 completion + adversarial review fixes |
+| 2026-05-26 | v3.3 | Node 0.11, README | Added Node 0.11: Git pre-commit hook for agent integration (`install-hook`/`uninstall-hook` CLI commands, self-contained hook script). Hook blocks commits on critical+major findings with structured stderr output that AI agents can parse. | User requested agent integration (OpenCode + MyGO workflow) |

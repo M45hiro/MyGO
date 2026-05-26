@@ -51,6 +51,53 @@ mygo review staged --output markdown
 mygo review - --no-lsp --no-context --no-stream
 ```
 
+### Agent Integration (OpenCode / Claude Code / etc.)
+
+AI coding agents don't know about MyGO, and you shouldn't need to remind them. Install the pre-commit hook once and every `git commit` is automatically reviewed:
+
+```bash
+# One-time setup
+mygo install-hook
+```
+
+Now when an agent (or you) runs `git commit`, MyGO checks the staged diff automatically:
+
+```
+$ git commit -m "feat: add user search"
+
+MyGO found 1 critical, 2 major issue(s):
+
+  !! [CRITICAL] [security] SQL Injection in search query
+     api/users.py:42
+     f-string concatenation in WHERE clause
+     Fix: Use parameterized queries with ? placeholders
+
+  !  [MAJOR] [performance] N+1 query in user list
+     api/users.py:68
+     Query inside loop over results
+     Fix: Pre-fetch related data with a JOIN or IN clause
+
+Score: 40/100
+Commit blocked — fix the issues above and try again.
+Run 'mygo review' for full details.
+Use 'git commit --no-verify' to bypass.
+```
+
+The agent sees a failed commit with structured error output. It reads the file paths, line numbers, and `Fix:` suggestions, then edits the code and retries — no MyGO awareness needed.
+
+**How it works**: The hook runs `mygo review --staged --output json` before each commit. Commits are blocked on `critical` + `major` findings. Configure the threshold:
+
+```bash
+# Block only on critical issues
+export MYGO_HOOK_BLOCK_ON=critical
+
+# Skip hook for a single commit
+MYGO_SKIP_HOOK=1 git commit -m "wip"
+
+# Remove the hook
+mygo uninstall-hook
+```
+
 ## Configuration
 
 Create `.mygo.yaml` in your project root:

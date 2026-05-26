@@ -18,6 +18,7 @@ from mygo.diff_parser import parse_diff
 from mygo.git_workspace import find_repo_root, get_changed_files_content
 from mygo.config import load_config
 from mygo.prompt import PromptBuilder
+from mygo.hook import install as install_hook, uninstall as uninstall_hook
 from mygo.llm import CodeReviewer, ConfigError, APIError
 from mygo.models import Report, ReportMetadata, Finding
 
@@ -166,6 +167,42 @@ def review(
     except KeyboardInterrupt:
         click.echo("\nCancelled.", err=True)
         sys.exit(130)
+
+
+@main.command("install-hook")
+@click.option("--force", is_flag=True, help="Overwrite existing pre-commit hook")
+def install_hook_cmd(force: bool) -> None:
+    """Install pre-commit hook for automatic review on git commit.
+
+    The hook runs 'mygo review' on staged changes before every commit.
+    Commits are blocked on critical + major findings (configurable via
+    MYGO_HOOK_BLOCK_ON env var). Use MYGO_SKIP_HOOK=1 to skip.
+
+    Works transparently with AI coding agents (OpenCode, Claude Code, etc.)
+    — the agent sees the blocked commit, reads the findings, and fixes issues.
+    """
+    repo_root = find_repo_root()
+    if repo_root is None:
+        raise click.ClickException(
+            "Not in a git repository. Run 'git init' first."
+        )
+    try:
+        msg = install_hook(Path(repo_root), force=force)
+        click.echo(msg)
+    except FileNotFoundError as e:
+        raise click.ClickException(str(e))
+
+
+@main.command("uninstall-hook")
+def uninstall_hook_cmd() -> None:
+    """Remove the MyGO pre-commit hook."""
+    repo_root = find_repo_root()
+    if repo_root is None:
+        raise click.ClickException(
+            "Not in a git repository. Run 'git init' first."
+        )
+    msg = uninstall_hook(Path(repo_root))
+    click.echo(msg)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
