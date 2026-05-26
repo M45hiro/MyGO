@@ -1,4 +1,4 @@
-# MyGO
+# Mastery Git Oversight
 
 AI-powered code review agent with LSP semantic analysis. Supports 7 LLM providers, 3 languages, and zero-config project context inference.
 
