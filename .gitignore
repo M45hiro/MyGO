@@ -1,0 +1,52 @@
+# Bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+.env
+
+# Distribution
+*.egg-info/
+dist/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Compiled extensions
+*.so
+*.egg
+
+# Coverage
+*.cover
+.coverage*
+htmlcov/
+
+# pyenv
+.python-version
+
+# OS
+.DS_Store
+Thumbs.db
+
+# MyGO auto-generated cache
+.mygo/
+
+# Claude Code
+.claude/
+
+# Experiment generated data
+tests/experiment/results/
+tests/experiment/logs/
+tests/experiment/workdir/
+
+# pytest cache
+.pytest_cache/

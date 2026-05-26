@@ -1,0 +1,56 @@
+# MyGO default configuration
+# Modify values to customize review behavior.
+
+# ---------------------------------------------------------------------------
+# LLM settings — choose your provider and model
+# ---------------------------------------------------------------------------
+# Provider options: anthropic | openai | deepseek | qwen | kimi | glm | gemini
+# Each provider reads its own environment variable for the API key:
+#   anthropic → ANTHROPIC_API_KEY
+#   openai    → OPENAI_API_KEY
+#   deepseek  → DEEPSEEK_API_KEY
+#   qwen      → DASHSCOPE_API_KEY
+#   kimi      → MOONSHOT_API_KEY
+#   glm       → ZHIPUAI_API_KEY
+#   gemini    → GOOGLE_API_KEY
+llm:
+  provider: anthropic
+  model: claude-sonnet-4-6
+  max_tokens: 4096
+  timeout: 60
+
+# ---------------------------------------------------------------------------
+# Review categories — comment out any you want to disable
+# ---------------------------------------------------------------------------
+categories:
+  - security
+  - bug
+  - performance
+  - maintainability
+  - style
+
+# ---------------------------------------------------------------------------
+# LSP settings — semantic analysis via language servers
+# ---------------------------------------------------------------------------
+# Requires language servers to be installed:
+#   Python:     npm install -g pyright
+#   TypeScript: npm install -g typescript-language-server typescript
+#   Go:         go install golang.org/x/tools/gopls@latest
+lsp:
+  enabled: true
+  timeout: 10
+  max_references: 20
+
+# ---------------------------------------------------------------------------
+# Project context — automatic inference of project intent
+# ---------------------------------------------------------------------------
+context:
+  enabled: true
+  cache_ttl: 7       # days before cache expires and full rescan triggers
+
+# ---------------------------------------------------------------------------
+# Output settings
+# ---------------------------------------------------------------------------
+output:
+  format: terminal   # terminal | json | markdown
+  color: true

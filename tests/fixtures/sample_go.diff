@@ -1,0 +1,10 @@
+diff --git a/pkg/auth/auth.go b/pkg/auth/auth.go
+index 789..abc 100644
+--- a/pkg/auth/auth.go
++++ b/pkg/auth/auth.go
+@@ -1,4 +1,4 @@
+ func Login(user string, password string) bool {
+-	query := "SELECT * FROM users WHERE name='" + user + "'"
++	query := "SELECT * FROM users WHERE name=?"
+ 	return db.Query(query, user)
+ }
