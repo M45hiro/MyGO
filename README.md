@@ -140,13 +140,13 @@ A single LLM (DeepSeek V4 Pro) built a JSON parser from scratch in 7 incremental
 | Metric | Group A (LLM only) | Group B (LLM + MyGO) |
 |--------|-------------------|----------------------|
 | **Correctness** | **0.0%** (0/58) | **100.0%** (58/58) |
-| Parser status | Broken — could not import | Fully functional |
-| MyGO findings | — | 11 issues across 4 features |
-| Syntax errors caught | — | 2 auto-retried |
+| Parser status | Broken — `module 'parser' has no attribute 'parse'` | Fully functional |
+| MyGO findings | — | 7 issues across 2 features |
+| Syntax errors caught | 3 auto-retried (F5, F6, F7) | 0 |
 
-**What happened**: Group A's F2 API call timed out, leaving basic value parsing unimplemented. All subsequent features built on broken code, producing a parser that couldn't even import. Group B's MyGO caught bugs at F1 (leading-zero handling, unicode escape overflow), F4 (missing validation), F6 (weak error messages), and F7 (CLI edge cases). Combined with syntax-check retries, Group B produced a parser equivalent in correctness to Python's built-in `json` module.
+**What happened**: At F1, Group B's LLM rewrote the parser in a way that deleted the `parse` function body and removed the CLI entry point — MyGO flagged 5 issues (1 critical + 2 major + 1 minor + 1 suggestion) before commit, preventing a broken foundation. At F3, MyGO caught 2 more issues (boundary check logic + redundant whitespace scanning). Group A, without reviews, accumulated silent breakage: F5/F6/F7 each introduced Python syntax errors that required auto-retry. By the finish line, Group A's parser couldn't even be imported (`module 'parser' has no attribute 'parse'`), while Group B's parser matched Python's built-in `json` module on all 58 test cases.
 
-**Key takeaway**: Without MyGO, a single API hiccup cascaded into total codebase corruption. With MyGO, the same LLM produced a perfect parser — not just "fewer bugs," but zero functional defects.
+**Key takeaway**: LLMs routinely produce broken code during incremental development — 3 of 7 features in this run had syntax errors, and the very first feature silently deleted core functionality. MyGO caught the structural breakage at commit time, before it could cascade into later features.
 
 ### Experiment 1 — Code Quality (TODO API)
 
